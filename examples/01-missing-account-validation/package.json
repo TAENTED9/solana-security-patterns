@@ -1,0 +1,31 @@
+{
+  "name": "missing-account-validation-tests",
+  "version": "1.0.0",
+  "description": "Tests for missing account validation security pattern",
+  "scripts": {
+    "test": "anchor test",
+    "test-vulnerable": "anchor test --skip-build -- --features vulnerable",
+    "test-secure": "anchor test --skip-build"
+  },
+  "dependencies": {
+    "@coral-xyz/anchor": "^0.32.1",
+    "@solana/web3.js": "^1.95.8"
+  },
+  "devDependencies": {
+    "@types/bn.js": "^5.1.5",
+    "@types/chai": "^4.3.5",
+    "@types/mocha": "^10.0.1",
+    "chai": "^4.3.7",
+    "mocha": "^10.2.0",
+    "ts-mocha": "^10.0.0",
+    "typescript": "^5.0.4"
+  },
+  "keywords": [
+    "solana",
+    "security",
+    "anchor",
+    "testing"
+  ],
+  "author": "Sam - Security Engineer",
+  "license": "MIT"
+}
