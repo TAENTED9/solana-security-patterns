@@ -206,13 +206,13 @@ Each security pattern follows this structure:
 ```
 examples/XX-pattern-name/
 +-- programs/
-�   +-- vulnerable/              # Vulnerable implementation
-�   �   +-- src/lib.rs          # Flawed program code with comments
-�   +-- secure/                  # Secure implementation
-�       +-- src/lib.rs          # Fixed program with explanations
+   +-- vulnerable/              # Vulnerable implementation
+      +-- src/lib.rs          # Flawed program code with comments
+   +-- secure/                  # Secure implementation
+       +-- src/lib.rs          # Fixed program with explanations
 +-- tests/
-�   +-- exploit.ts              # Demonstrates the vulnerability
-�   +-- secure.ts               # Proves the fix works
+   +-- exploit.ts              # Demonstrates the vulnerability
+   +-- secure.ts               # Proves the fix works
 +-- Anchor.toml                  # Anchor configuration
 +-- README.md                    # Pattern-specific documentation
 ```
