@@ -1,4 +1,4 @@
-# Example 04: CPI Security / Reentrancy / Confused Deputy
+﻿# Example 04: CPI Security / Reentrancy / Confused Deputy
 
 ## Overview
 
@@ -37,7 +37,7 @@ Solana programs frequently invoke other programs via CPI. Without proper validat
 **Key Issues:**
 
 ```rust
-// ❌ PROBLEM 1: Ignored CPI return value
+// [VULNERABLE] PROBLEM 1: Ignored CPI return value
 pub fn withdraw_and_transfer(ctx: Context<WithdrawTransfer>, amount: u64) -> Result<()> {
     // Call some external program
     invoke(
@@ -47,16 +47,16 @@ pub fn withdraw_and_transfer(ctx: Context<WithdrawTransfer>, amount: u64) -> Res
             data: ...,
         },
         &[],
-    );  // ❌ Return value ignored! CPI could have failed silently
+    );  // [VULNERABLE] Return value ignored! CPI could have failed silently
     
     // Assuming external program succeeded, we proceed
     ctx.accounts.vault.balance -= amount;
     Ok(())
 }
 
-// ❌ PROBLEM 2: User-provided program ID (Confused Deputy)
+// [VULNERABLE] PROBLEM 2: User-provided program ID (Confused Deputy)
 pub fn swap_tokens(ctx: Context<Swap>, amount: u64, program_id: Pubkey) -> Result<()> {
-    // ❌ Attacker provides program_id - could be their own program
+    // [VULNERABLE] Attacker provides program_id - could be their own program
     invoke(
         &Instruction {
             program_id,  // ATTACKER CONTROLS THIS
@@ -68,16 +68,16 @@ pub fn swap_tokens(ctx: Context<Swap>, amount: u64, program_id: Pubkey) -> Resul
     // Update balances assuming legitimate swap occurred
 }
 
-// ❌ PROBLEM 3: Reentrancy vulnerability
+// [VULNERABLE] PROBLEM 3: Reentrancy vulnerability
 pub fn transfer_and_callback(ctx: Context<Transfer>, amount: u64) -> Result<()> {
     // Transfer tokens (invokes external program)
-    invoke(...)?;  // ❌ Attacker's program can call us again here
+    invoke(...)?;  // [VULNERABLE] Attacker's program can call us again here
     
     // Update state after transfer
     ctx.accounts.vault.balance -= amount;  // Might use stale state!
 }
 
-// ❌ PROBLEM 4: PDA doesn't sign properly
+// [VULNERABLE] PROBLEM 4: PDA doesn't sign properly
 pub fn complex_swap(ctx: Context<Swap>, amount: u64, bumps: SwapBumps) -> Result<()> {
     // Create instruction manually
     let ix = Instruction {
@@ -86,7 +86,7 @@ pub fn complex_swap(ctx: Context<Swap>, amount: u64, bumps: SwapBumps) -> Result
         accounts: vec![...],
     };
     
-    // ❌ Doesn't actually sign with PDA - uses wrong seeds/bump
+    // [VULNERABLE] Doesn't actually sign with PDA - uses wrong seeds/bump
     invoke_signed(&ix, &[&[seeds, &[WRONG_BUMP]]], ...)?;
 }
 ```
@@ -102,7 +102,7 @@ pub fn complex_swap(ctx: Context<Swap>, amount: u64, bumps: SwapBumps) -> Result
 - Validates account relationships after CPI
 
 ```rust
-// ✅ Proper CPI with return value validation
+// [SECURE] Proper CPI with return value validation
 pub fn withdraw_and_transfer(ctx: Context<WithdrawTransfer>, amount: u64) -> Result<()> {
     // Verify target program is official token program
     require!(
@@ -141,7 +141,7 @@ pub fn withdraw_and_transfer(ctx: Context<WithdrawTransfer>, amount: u64) -> Res
     Ok(())
 }
 
-// ✅ Hardcoded program IDs prevent confused deputy
+// [SECURE] Hardcoded program IDs prevent confused deputy
 pub fn swap_tokens(ctx: Context<Swap>, amount: u64) -> Result<()> {
     // Program ID is constant, attacker cannot override
     require!(
@@ -153,7 +153,7 @@ pub fn swap_tokens(ctx: Context<Swap>, amount: u64) -> Result<()> {
     Ok(())
 }
 
-// ✅ Check state before and after to detect reentrancy
+// [SECURE] Check state before and after to detect reentrancy
 pub fn transfer_with_guard(ctx: Context<Transfer>, amount: u64) -> Result<()> {
     // Record state before CPI
     let initial_balance = ctx.accounts.vault.balance;
@@ -175,7 +175,7 @@ pub fn transfer_with_guard(ctx: Context<Transfer>, amount: u64) -> Result<()> {
     Ok(())
 }
 
-// ✅ Proper invoke_signed with canonical PDA
+// [SECURE] Proper invoke_signed with canonical PDA
 pub fn execute_with_pda(ctx: Context<Execute>, bumps: ExecuteBumps) -> Result<()> {
     let seeds = &[b"authority", &[bumps.authority]];
     
@@ -185,7 +185,7 @@ pub fn execute_with_pda(ctx: Context<Execute>, bumps: ExecuteBumps) -> Result<()
         data: ...,
     };
     
-    // ✅ Sign with correct PDA and canonical bump
+    // [SECURE] Sign with correct PDA and canonical bump
     invoke_signed(
         &ix,
         &[ctx.accounts.authority.to_account_info()],

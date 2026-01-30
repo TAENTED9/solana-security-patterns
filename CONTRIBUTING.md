@@ -1,4 +1,4 @@
-# Contributing to Solana Security Patterns
+﻿# Contributing to Solana Security Patterns
 
 First off, thank you for considering contributing to Solana Security Patterns! This repository exists to help the Solana developer community build more secure applications, and your contributions make that possible.
 
@@ -135,7 +135,7 @@ examples/XX-pattern-name/
 ### Writing Vulnerable Examples
 
 ```rust
-// ❌ VULNERABLE: Clear explanation of what's wrong
+// [VULNERABLE] VULNERABLE: Clear explanation of what's wrong
 pub fn vulnerable_function(ctx: Context<VulnerableAccounts>) -> Result<()> {
     // Explain the vulnerability inline
     // Show what an attacker could do
@@ -145,7 +145,7 @@ pub fn vulnerable_function(ctx: Context<VulnerableAccounts>) -> Result<()> {
 ```
 
 **Requirements:**
-1. Must have clear `❌ VULNERABLE:` markers
+1. Must have clear `[VULNERABLE] VULNERABLE:` markers
 2. Must include inline explanation of exploit
 3. Must be realistic (based on real vulnerabilities)
 4. Must compile and run
@@ -154,7 +154,7 @@ pub fn vulnerable_function(ctx: Context<VulnerableAccounts>) -> Result<()> {
 ### Writing Secure Examples
 
 ```rust
-// ✅ SECURE: Clear explanation of security features
+// [SECURE] SECURE: Clear explanation of security features
 pub fn secure_function(ctx: Context<SecureAccounts>) -> Result<()> {
     // Explain the security measures inline
     // Reference Anchor constraints used
@@ -164,7 +164,7 @@ pub fn secure_function(ctx: Context<SecureAccounts>) -> Result<()> {
 ```
 
 **Requirements:**
-1. Must have clear `✅ SECURE:` markers
+1. Must have clear `[SECURE] SECURE:` markers
 2. Must include inline explanation of security features
 3. Must properly prevent the vulnerability
 4. Must compile and run
@@ -251,8 +251,8 @@ cargo clippy --all-targets -- -D warnings
 **Additional Guidelines:**
 - Use descriptive variable names
 - Comment complex logic
-- Mark vulnerabilities clearly (❌)
-- Mark security features clearly (✅)
+- Mark vulnerabilities clearly ([VULNERABLE])
+- Mark security features clearly ([SECURE])
 - Include inline exploitation/security notes
 
 ### TypeScript Tests
@@ -356,8 +356,8 @@ Brief description of changes.
 - [ ] All tests pass
 - [ ] Documentation updated
 - [ ] Citations added
-- [ ] Vulnerable code has ❌ markers
-- [ ] Secure code has ✅ markers
+- [ ] Vulnerable code has [VULNERABLE] markers
+- [ ] Secure code has [SECURE] markers
 - [ ] README.md updated (if new pattern)
 
 ## Testing

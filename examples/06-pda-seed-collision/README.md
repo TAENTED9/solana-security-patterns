@@ -1,4 +1,4 @@
-# Example 06: PDA Seed Collision Vulnerabilities
+﻿# Example 06: PDA Seed Collision Vulnerabilities
 
 ## Overview
 
@@ -38,9 +38,9 @@ PDAs use seeds deterministically derived from program ID and seed values. Withou
 **Key Issues:**
 
 ```rust
-// ❌ PROBLEM 1: User-controlled seed collision
+// [VULNERABLE] PROBLEM 1: User-controlled seed collision
 pub fn create_user_account(ctx: Context<CreateUser>, user: Pubkey, custom_seed: String) -> Result<()> {
-    // ❌ Attacker can choose custom_seed to collide with another user's PDA
+    // [VULNERABLE] Attacker can choose custom_seed to collide with another user's PDA
     let (_pda, _bump) = Pubkey::find_program_address(
         &[b"user", user.as_ref(), custom_seed.as_bytes()],
         &crate::ID,
@@ -49,9 +49,9 @@ pub fn create_user_account(ctx: Context<CreateUser>, user: Pubkey, custom_seed: 
     // Create account at this PDA
 }
 
-// ❌ PROBLEM 2: Insufficient entropy - only user key
+// [VULNERABLE] PROBLEM 2: Insufficient entropy - only user key
 pub fn create_vault(ctx: Context<CreateVault>, user: Pubkey) -> Result<()> {
-    // ❌ Only user pubkey as seed - insufficient entropy
+    // [VULNERABLE] Only user pubkey as seed - insufficient entropy
     let (pda, bump) = Pubkey::find_program_address(
         &[b"vault", user.as_ref()],
         &crate::ID,
@@ -60,24 +60,24 @@ pub fn create_vault(ctx: Context<CreateVault>, user: Pubkey) -> Result<()> {
     // Any user can create multiple "vault" PDAs by using different user values
 }
 
-// ❌ PROBLEM 3: Reusable PDA across contexts
+// [VULNERABLE] PROBLEM 3: Reusable PDA across contexts
 pub fn stake(ctx: Context<Stake>, amount: u64) -> Result<()> {
-    // ❌ Same PDA used for both staking and lending
+    // [VULNERABLE] Same PDA used for both staking and lending
     // Attacker exploits this by colliding with lending account
 }
 
 pub fn lend(ctx: Context<Lend>, amount: u64) -> Result<()> {
-    // ❌ Same seed pattern creates collision risk
+    // [VULNERABLE] Same seed pattern creates collision risk
 }
 
-// ❌ PROBLEM 4: User chooses all seeds
+// [VULNERABLE] PROBLEM 4: User chooses all seeds
 #[derive(Accounts)]
 pub struct CreateAccount<'info> {
     #[account(
         init,
         payer = authority,
         space = 8 + MyAccount::LEN,
-        seeds = [b"user", user_seed.as_bytes()],  // ❌ ALL from user!
+        seeds = [b"user", user_seed.as_bytes()],  // [VULNERABLE] ALL from user!
         bump,
     )]
     pub account: Account<'info, MyAccount>,
@@ -86,14 +86,14 @@ pub struct CreateAccount<'info> {
     // ... missing other constraints
 }
 
-// ❌ PROBLEM 5: No validation of PDA derivation in instruction
+// [VULNERABLE] PROBLEM 5: No validation of PDA derivation in instruction
 pub fn initialize_existing(ctx: Context<InitExisting>, seed: String) -> Result<()> {
     let (expected_pda, expected_bump) = Pubkey::find_program_address(
         &[b"account", seed.as_bytes()],
         &crate::ID,
     );
     
-    // ❌ Attacker could pass wrong PDA and this won't catch it
+    // [VULNERABLE] Attacker could pass wrong PDA and this won't catch it
     // Only validates if it matches computed value, but computation is weak
     require!(ctx.accounts.account.key() == expected_pda, ...);
 }
@@ -110,7 +110,7 @@ pub fn initialize_existing(ctx: Context<InitExisting>, seed: String) -> Result<(
 - Creates separate PDA patterns for different purposes
 
 ```rust
-// ✅ Secure PDA with user key + authority + counter
+// [SECURE] Secure PDA with user key + authority + counter
 pub fn create_user_account(
     ctx: Context<CreateUser>,
     index: u32,  // User chooses which index they want
@@ -138,7 +138,7 @@ pub fn create_user_account(
     Ok(())
 }
 
-// ✅ Anchor's constraint prevents collision automatically
+// [SECURE] Anchor's constraint prevents collision automatically
 #[derive(Accounts)]
 pub struct CreateVault<'info> {
     #[account(
@@ -161,8 +161,8 @@ pub struct CreateVault<'info> {
 }
 
 pub fn create_vault(ctx: Context<CreateVault>, vault_id: u32) -> Result<()> {
-    // ✅ Anchor automatically validates PDA derivation
-    // ✅ Collision impossible because vault_id is unique per authority
+    // [SECURE] Anchor automatically validates PDA derivation
+    // [SECURE] Collision impossible because vault_id is unique per authority
     let vault = &mut ctx.accounts.vault;
     vault.authority = ctx.accounts.authority.key();
     vault.vault_id = vault_id;
@@ -172,7 +172,7 @@ pub fn create_vault(ctx: Context<CreateVault>, vault_id: u32) -> Result<()> {
     Ok(())
 }
 
-// ✅ Separate context for different account types prevents cross-context collision
+// [SECURE] Separate context for different account types prevents cross-context collision
 #[derive(Accounts)]
 pub struct CreateStakeAccount<'info> {
     #[account(
@@ -180,7 +180,7 @@ pub struct CreateStakeAccount<'info> {
         payer = authority,
         space = 8 + StakeAccount::LEN,
         seeds = [
-            b"stake",  // ✅ Different context prefix
+            b"stake",  // [SECURE] Different context prefix
             user.key().as_ref(),
             authority.key().as_ref(),
         ],
@@ -199,7 +199,7 @@ pub struct CreateLendAccount<'info> {
         payer = authority,
         space = 8 + LendAccount::LEN,
         seeds = [
-            b"lend",  // ✅ Different context prefix
+            b"lend",  // [SECURE] Different context prefix
             user.key().as_ref(),
             authority.key().as_ref(),
         ],
@@ -211,7 +211,7 @@ pub struct CreateLendAccount<'info> {
     pub system_program: Program<'info, System>,
 }
 
-// ✅ Validate PDA derivation explicitly in code
+// [SECURE] Validate PDA derivation explicitly in code
 pub fn use_account(ctx: Context<UseAccount>, expected_bump: u8) -> Result<()> {
     // Recompute PDA to verify it matches
     let seeds = [

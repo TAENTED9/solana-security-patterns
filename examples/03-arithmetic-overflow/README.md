@@ -1,4 +1,4 @@
-# Example 03: Arithmetic Overflow and Underflow
+﻿# Example 03: Arithmetic Overflow and Underflow
 
 ## Overview
 
@@ -40,31 +40,31 @@ Rust's default arithmetic operators (`+`, `-`, `*`) panic on overflow in debug m
 **Key Issues:**
 
 ```rust
-// ❌ PROBLEM 1: Unchecked arithmetic (wraps on overflow/underflow)
+// [VULNERABLE] PROBLEM 1: Unchecked arithmetic (wraps on overflow/underflow)
 pub fn transfer(ctx: Context<Transfer>, amount: u64) -> Result<()> {
     let from = &mut ctx.accounts.from;
     let to = &mut ctx.accounts.to;
     
-    from.balance -= amount;  // ❌ Underflows silently if amount > balance
-    to.balance += amount;    // ❌ Overflows silently if to.balance + amount > u64::MAX
+    from.balance -= amount;  // [VULNERABLE] Underflows silently if amount > balance
+    to.balance += amount;    // [VULNERABLE] Overflows silently if to.balance + amount > u64::MAX
     Ok(())
 }
 
-// ❌ PROBLEM 2: No overflow check in accumulation
+// [VULNERABLE] PROBLEM 2: No overflow check in accumulation
 pub fn accumulate_rewards(ctx: Context<Accumulate>, reward: u64) -> Result<()> {
     let vault = &mut ctx.accounts.vault;
-    vault.total_rewards += reward;  // ❌ No check if this overflows
+    vault.total_rewards += reward;  // [VULNERABLE] No check if this overflows
     Ok(())
 }
 
-// ❌ PROBLEM 3: Precision loss in fixed-point math
+// [VULNERABLE] PROBLEM 3: Precision loss in fixed-point math
 pub fn calculate_swap_output(input: u64, rate: u64) -> u64 {
-    (input * rate) / DECIMALS  // ❌ Rounds down, losing precision
+    (input * rate) / DECIMALS  // [VULNERABLE] Rounds down, losing precision
 }
 
-// ❌ PROBLEM 4: Multiple unchecked operations
+// [VULNERABLE] PROBLEM 4: Multiple unchecked operations
 pub fn compound_calculation(a: u64, b: u64, c: u64) -> Result<u64> {
-    Ok(a + b + c)  // ❌ Each operation could overflow
+    Ok(a + b + c)  // [VULNERABLE] Each operation could overflow
 }
 ```
 
@@ -79,7 +79,7 @@ pub fn compound_calculation(a: u64, b: u64, c: u64) -> Result<u64> {
 - Documents expected value ranges
 
 ```rust
-// ✅ Safe arithmetic with explicit error handling
+// [SECURE] Safe arithmetic with explicit error handling
 pub fn transfer(ctx: Context<Transfer>, amount: u64) -> Result<()> {
     let from = &mut ctx.accounts.from;
     let to = &mut ctx.accounts.to;
@@ -100,7 +100,7 @@ pub fn transfer(ctx: Context<Transfer>, amount: u64) -> Result<()> {
     Ok(())
 }
 
-// ✅ Safe accumulation with bounds checking
+// [SECURE] Safe accumulation with bounds checking
 pub fn accumulate_rewards(ctx: Context<Accumulate>, reward: u64) -> Result<()> {
     let vault = &mut ctx.accounts.vault;
     
@@ -112,7 +112,7 @@ pub fn accumulate_rewards(ctx: Context<Accumulate>, reward: u64) -> Result<()> {
     Ok(())
 }
 
-// ✅ Proper fixed-point arithmetic with precision handling
+// [SECURE] Proper fixed-point arithmetic with precision handling
 pub fn calculate_swap_output(input: u64, rate: u64) -> Result<u64> {
     // Use checked multiplication to prevent overflow
     let product = input

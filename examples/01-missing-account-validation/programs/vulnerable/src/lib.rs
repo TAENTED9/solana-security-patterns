@@ -1,4 +1,4 @@
-use anchor_lang::prelude::*;
+﻿use anchor_lang::prelude::*;
 
 declare_id!("Va1idW2Kzzz1111111111111111111111111111111");
 
@@ -13,7 +13,7 @@ pub mod missing_validation_vulnerable {
     pub fn initialize(ctx: Context<Initialize>, name: String) -> Result<()> {
         let user_account = &mut ctx.accounts.user_account;
         
-        // ❌ VULNERABLE: No check that user_account.owner == program_id
+        // [VULNERABLE] VULNERABLE: No check that user_account.owner == program_id
         // An attacker could pass ANY account they control here
         user_account.authority = ctx.accounts.authority.key();
         user_account.name = name;
@@ -35,13 +35,13 @@ pub mod missing_validation_vulnerable {
         let from = &mut ctx.accounts.from;
         let to = &mut ctx.accounts.to;
 
-        // ❌ VULNERABLE: No PDA verification
+        // [VULNERABLE] VULNERABLE: No PDA verification
         // Attacker could pass their own account pretending to be the vault
         
-        // ❌ VULNERABLE: No owner check
+        // [VULNERABLE] VULNERABLE: No owner check
         // These accounts might not be owned by our program!
         
-        // ❌ VULNERABLE: Unchecked arithmetic
+        // [VULNERABLE] VULNERABLE: Unchecked arithmetic
         from.points -= amount;  // Can underflow!
         to.points += amount;    // Can overflow!
 
@@ -55,19 +55,19 @@ pub mod missing_validation_vulnerable {
     pub fn withdraw(
         ctx: Context<Withdraw>,
         amount: u64,
-        vault_authority: Pubkey,  // ❌ ATTACKER CONTROLS THIS!
+        vault_authority: Pubkey,  // [VULNERABLE] ATTACKER CONTROLS THIS!
     ) -> Result<()> {
-        // ❌ VULNERABLE: Comparing against attacker-provided value
+        // [VULNERABLE] VULNERABLE: Comparing against attacker-provided value
         require!(
             ctx.accounts.vault.authority == vault_authority,
             ErrorCode::Unauthorized
         );
 
-        // ❌ VULNERABLE: No verification that vault_authority actually signed
-        // ❌ VULNERABLE: No PDA derivation check for vault
+        // [VULNERABLE] VULNERABLE: No verification that vault_authority actually signed
+        // [VULNERABLE] VULNERABLE: No PDA derivation check for vault
         
         let vault = &mut ctx.accounts.vault;
-        vault.balance -= amount;  // ❌ Unchecked arithmetic
+        vault.balance -= amount;  // [VULNERABLE] Unchecked arithmetic
         
         // Transfer would happen here...
         msg!("Withdrew {} lamports", amount);
@@ -81,7 +81,7 @@ pub mod missing_validation_vulnerable {
 
 #[derive(Accounts)]
 pub struct Initialize<'info> {
-    /// ❌ VULNERABLE: Uses init without seeds/bump
+    /// [VULNERABLE] VULNERABLE: Uses init without seeds/bump
     /// This creates a regular account, not a PDA
     /// Attacker can pass ANY account here
     #[account(
@@ -99,28 +99,28 @@ pub struct Initialize<'info> {
 
 #[derive(Accounts)]
 pub struct TransferPoints<'info> {
-    /// ❌ VULNERABLE: No owner verification
-    /// ❌ VULNERABLE: No PDA seed verification
-    /// ❌ VULNERABLE: No has_one constraint to verify authority
+    /// [VULNERABLE] VULNERABLE: No owner verification
+    /// [VULNERABLE] VULNERABLE: No PDA seed verification
+    /// [VULNERABLE] VULNERABLE: No has_one constraint to verify authority
     #[account(mut)]
     pub from: Account<'info, UserAccount>,
     
     #[account(mut)]
     pub to: Account<'info, UserAccount>,
     
-    /// ❌ VULNERABLE: Not required to be signer!
+    /// [VULNERABLE] VULNERABLE: Not required to be signer!
     /// Attacker can pass any public key here
     pub authority: AccountInfo<'info>,
 }
 
 #[derive(Accounts)]
 pub struct Withdraw<'info> {
-    /// ❌ VULNERABLE: No seeds/bump verification
-    /// ❌ VULNERABLE: No owner check
+    /// [VULNERABLE] VULNERABLE: No seeds/bump verification
+    /// [VULNERABLE] VULNERABLE: No owner check
     #[account(mut)]
     pub vault: Account<'info, Vault>,
     
-    /// ❌ VULNERABLE: Not required to be signer
+    /// [VULNERABLE] VULNERABLE: Not required to be signer
     /// Also no has_one constraint linking to vault.authority
     pub authority: AccountInfo<'info>,
     

@@ -1,4 +1,4 @@
-# Solana Security Patterns: A Comprehensive Deep Dive
+﻿# Solana Security Patterns: A Comprehensive Deep Dive
 
 **By Sam - Senior Security Engineer & Solana Developer**  
 **Last Updated: January 27, 2026**
@@ -94,7 +94,7 @@ CPIs enable composability but introduce trust boundaries:
 **The Vulnerability**
 
 ```rust
-// ❌ VULNERABLE: No owner or PDA verification
+// [VULNERABLE] VULNERABLE: No owner or PDA verification
 #[derive(Accounts)]
 pub struct Transfer<'info> {
     #[account(mut)]
@@ -120,7 +120,7 @@ An attacker can:
 **The Secure Pattern**
 
 ```rust
-// ✅ SECURE: Proper validation with Anchor constraints
+// [SECURE] SECURE: Proper validation with Anchor constraints
 #[derive(Accounts)]
 pub struct Transfer<'info> {
     #[account(
@@ -155,7 +155,7 @@ pub struct Transfer<'info> {
 **The Vulnerability**
 
 ```rust
-// ❌ VULNERABLE: Trusting data without verifying signer
+// [VULNERABLE] VULNERABLE: Trusting data without verifying signer
 pub fn transfer(ctx: Context<Transfer>, amount: u64, authority: Pubkey) -> Result<()> {
     // Uses authority from instruction data instead of verified signer!
     require!(ctx.accounts.user.authority == authority, ErrorCode::Unauthorized);
@@ -190,7 +190,7 @@ Access control failures caused **$1.6 billion in losses** in H1 2025 alone, repr
 **The Secure Pattern**
 
 ```rust
-// ✅ SECURE: Verify actual signer, not claimed authority
+// [SECURE] SECURE: Verify actual signer, not claimed authority
 #[derive(Accounts)]
 pub struct Transfer<'info> {
     #[account(
@@ -225,7 +225,7 @@ pub fn transfer(ctx: Context<Transfer>, amount: u64) -> Result<()> {
 **The Vulnerability**
 
 ```rust
-// ❌ VULNERABLE: Unchecked arithmetic
+// [VULNERABLE] VULNERABLE: Unchecked arithmetic
 pub fn deposit(ctx: Context<Deposit>, amount: u64) -> Result<()> {
     ctx.accounts.vault.balance += amount;  // Can overflow!
     ctx.accounts.user.deposited += amount;
@@ -254,7 +254,7 @@ Academic research on Solana vulnerabilities specifically calls out integer overf
 **The Secure Pattern**
 
 ```rust
-// ✅ SECURE: Checked arithmetic with explicit error handling
+// [SECURE] SECURE: Checked arithmetic with explicit error handling
 pub fn deposit(ctx: Context<Deposit>, amount: u64) -> Result<()> {
     ctx.accounts.vault.balance = ctx.accounts.vault.balance
         .checked_add(amount)
@@ -299,7 +299,7 @@ pub fn calculate_interest(principal: u64, rate: u64, time: u64) -> Result<u64> {
 **The Vulnerability**
 
 ```rust
-// ❌ VULNERABLE: CPI without validating results
+// [VULNERABLE] VULNERABLE: CPI without validating results
 pub fn flash_loan(ctx: Context<FlashLoan>, amount: u64) -> Result<()> {
     // 1. Transfer tokens to borrower
     token::transfer(
@@ -322,7 +322,7 @@ pub fn flash_loan(ctx: Context<FlashLoan>, amount: u64) -> Result<()> {
     )?;
     
     // 3. Check repayment
-    // ❌ Assumes token balances haven't been manipulated
+    // [VULNERABLE] Assumes token balances haven't been manipulated
     require!(
         ctx.accounts.vault.amount >= initial_balance,
         ErrorCode::NotRepaid
@@ -340,7 +340,7 @@ pub fn flash_loan(ctx: Context<FlashLoan>, amount: u64) -> Result<()> {
 **The Secure Pattern**
 
 ```rust
-// ✅ SECURE: Defensive CPI with pre/post validation
+// [SECURE] SECURE: Defensive CPI with pre/post validation
 pub fn flash_loan(ctx: Context<FlashLoan>, amount: u64) -> Result<()> {
     // 1. Record state BEFORE any external calls
     let initial_balance = ctx.accounts.vault.amount;
@@ -406,7 +406,7 @@ pub fn flash_loan(ctx: Context<FlashLoan>, amount: u64) -> Result<()> {
 **The Vulnerability**
 
 ```rust
-// ❌ VULNERABLE: No validation of closer or recipient
+// [VULNERABLE] VULNERABLE: No validation of closer or recipient
 pub fn close_account(ctx: Context<CloseAccount>) -> Result<()> {
     let dest_starting_lamports = ctx.accounts.destination.lamports();
     
@@ -437,7 +437,7 @@ await program.methods
 **The Secure Pattern**
 
 ```rust
-// ✅ SECURE: Validate authority and destination
+// [SECURE] SECURE: Validate authority and destination
 #[derive(Accounts)]
 pub struct CloseAccount<'info> {
     #[account(
@@ -497,7 +497,7 @@ pub fn close_account_manual(ctx: Context<CloseAccount>) -> Result<()> {
 **The Vulnerability**
 
 ```rust
-// ❌ VULNERABLE: User-controlled seeds without collision prevention
+// [VULNERABLE] VULNERABLE: User-controlled seeds without collision prevention
 #[derive(Accounts)]
 #[instruction(seed: String)]
 pub struct Initialize<'info> {
@@ -533,7 +533,7 @@ Sec3 documented a **semantic inconsistency vulnerability** in Solana stake pools
 **The Secure Pattern**
 
 ```rust
-// ✅ SECURE: Program-controlled seeds with uniqueness
+// [SECURE] SECURE: Program-controlled seeds with uniqueness
 #[derive(Accounts)]
 pub struct Initialize<'info> {
     #[account(
@@ -570,7 +570,7 @@ pub struct Initialize<'info> {
 **The Vulnerability**
 
 ```rust
-// ❌ VULNERABLE: Integer division loses precision
+// [VULNERABLE] VULNERABLE: Integer division loses precision
 pub fn calculate_share_value(
     total_value: u64,  // $1,000,000 (6 decimals: 1_000_000_000_000)
     total_shares: u64,  // 3 shares
@@ -595,7 +595,7 @@ Over millions of transactions, this becomes **significant value extraction**.
 **The Secure Pattern**
 
 ```rust
-// ✅ SECURE: Proper precision handling
+// [SECURE] SECURE: Proper precision handling
 use rust_decimal::Decimal;
 
 pub fn calculate_share_value(
@@ -671,10 +671,10 @@ Security is not a single check—it's layers:
 ```rust
 // Use strong types, not AccountInfo everywhere
 pub struct Transfer<'info> {
-    pub vault: Account<'info, Vault>,  // ✅ Typed
-    pub authority: Signer<'info>,      // ✅ Verified signer
+    pub vault: Account<'info, Vault>,  // [SECURE] Typed
+    pub authority: Signer<'info>,      // [SECURE] Verified signer
     // Not:
-    // pub vault: AccountInfo<'info>,   // ❌ No type safety
+    // pub vault: AccountInfo<'info>,   // [VULNERABLE] No type safety
 }
 ```
 

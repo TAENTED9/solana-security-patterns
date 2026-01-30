@@ -1,4 +1,4 @@
-# Solana Security Research Summary
+﻿# Solana Security Research Summary
 
 ## Research Overview
 

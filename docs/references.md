@@ -1,4 +1,4 @@
-# References and Citations
+﻿# References and Citations
 
 All sources used in building this Solana Security Patterns repository.
 

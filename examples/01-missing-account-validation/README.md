@@ -1,4 +1,4 @@
-# Example 01: Missing Account Validation
+﻿# Example 01: Missing Account Validation
 
 ## Overview
 
@@ -35,22 +35,22 @@ Solana programs must explicitly validate:
 **Key Issues:**
 
 ```rust
-// ❌ PROBLEM 1: No PDA verification
+// [VULNERABLE] PROBLEM 1: No PDA verification
 #[account(mut)]
 pub vault: Account<'info, Vault>,
 // Attacker can pass ANY account with Vault structure
 
-// ❌ PROBLEM 2: Authority from instruction data
+// [VULNERABLE] PROBLEM 2: Authority from instruction data
 pub fn withdraw(ctx: Context<Withdraw>, amount: u64, vault_authority: Pubkey) -> Result<()> {
     require!(ctx.accounts.vault.authority == vault_authority, ...);
     // Attacker controls vault_authority parameter!
 }
 
-// ❌ PROBLEM 3: No signer check
+// [VULNERABLE] PROBLEM 3: No signer check
 pub authority: AccountInfo<'info>,
 // Should be Signer<'info>
 
-// ❌ PROBLEM 4: No owner verification
+// [VULNERABLE] PROBLEM 4: No owner verification
 // Account<> type provides this, but init without seeds doesn't enforce PDA
 ```
 
@@ -59,7 +59,7 @@ pub authority: AccountInfo<'info>,
 **Security Features:**
 
 ```rust
-// ✅ FIX 1: PDA with seeds and bump
+// [SECURE] FIX 1: PDA with seeds and bump
 #[account(
     mut,
     seeds = [b"vault", authority.key().as_ref()],
@@ -67,17 +67,17 @@ pub authority: AccountInfo<'info>,
 )]
 pub vault: Account<'info, Vault>,
 
-// ✅ FIX 2: No authority parameter, use verified signer
+// [SECURE] FIX 2: No authority parameter, use verified signer
 pub fn withdraw(ctx: Context<Withdraw>, amount: u64) -> Result<()> {
     // Authority verified via has_one constraint
     // No parameter means no attacker control
 }
 
-// ✅ FIX 3: Require signer
+// [SECURE] FIX 3: Require signer
 pub authority: Signer<'info>,
 // Transaction must be signed by this key
 
-// ✅ FIX 4: Validate relationship
+// [SECURE] FIX 4: Validate relationship
 #[account(
     has_one = authority,  // vault.authority == authority.key()
 )]
@@ -253,7 +253,7 @@ Even if one layer is bypassed, others remain.
 
 ## Common Mistakes
 
-### ❌ Don't Do This
+### [VULNERABLE] Don't Do This
 
 ```rust
 // Accepting addresses from instruction data
@@ -270,7 +270,7 @@ require!(vault.authority == provided_authority, ...);
 pub vault: Account<'info, Vault>,  // No seeds!
 ```
 
-### ✅ Do This Instead
+### [SECURE] Do This Instead
 
 ```rust
 // Derive addresses from seeds

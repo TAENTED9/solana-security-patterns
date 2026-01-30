@@ -1,4 +1,4 @@
-import * as anchor from "@coral-xyz/anchor";
+﻿import * as anchor from "@coral-xyz/anchor";
 import { Program } from "@coral-xyz/anchor";
 import { PublicKey, Keypair, SystemProgram } from "@solana/web3.js";
 import { expect } from "chai";
@@ -68,7 +68,7 @@ describe("Secure: Missing Account Validation Fixed", () => {
       expect(accountData.authority.toString()).to.equal(user1.publicKey.toString());
       expect(accountData.name).to.equal("User 1");
       
-      console.log("✅ Legitimate PDA initialization successful");
+      console.log("[PASS] Legitimate PDA initialization successful");
     });
 
     it("Should reject non-PDA accounts", async () => {
@@ -79,7 +79,7 @@ describe("Secure: Missing Account Validation Fixed", () => {
         await program.methods
           .initialize("Fake Account")
           .accounts({
-            userAccount: fakeAccount.publicKey, // ❌ Not a PDA!
+            userAccount: fakeAccount.publicKey, // [VULNERABLE] Not a PDA!
             authority: user1.publicKey,
             systemProgram: SystemProgram.programId,
           })
@@ -89,7 +89,7 @@ describe("Secure: Missing Account Validation Fixed", () => {
         throw new Error("Should have failed but didn't!");
       } catch (err) {
         expect(err.message).to.include("seeds constraint");
-        console.log("✅ Non-PDA account rejected as expected");
+        console.log("[PASS] Non-PDA account rejected as expected");
       }
     });
   });
@@ -122,7 +122,7 @@ describe("Secure: Missing Account Validation Fixed", () => {
         throw new Error("Should have failed but didn't!");
       } catch (err) {
         expect(err.message).to.include("Signature verification failed");
-        console.log("✅ Unsigned authority rejected");
+        console.log("[PASS] Unsigned authority rejected");
       }
     });
 
@@ -139,13 +139,13 @@ describe("Secure: Missing Account Validation Fixed", () => {
           to: user2Account,
           authority: user1.publicKey,
         })
-        .signers([user1]) // ✅ Proper signature
+        .signers([user1]) // [PASS] Proper signature
         .rpc();
 
       const user2Data = await program.account.userAccount.fetch(user2Account);
       expect(user2Data.points.toNumber()).to.be.greaterThan(0);
       
-      console.log("✅ Legitimate transfer with proper authority succeeded");
+      console.log("[PASS] Legitimate transfer with proper authority succeeded");
     });
   });
 
@@ -170,7 +170,7 @@ describe("Secure: Missing Account Validation Fixed", () => {
         throw new Error("Should have failed but didn't!");
       } catch (err) {
         expect(err.message).to.include("InsufficientPoints");
-        console.log("✅ Underflow prevented with checked arithmetic");
+        console.log("[PASS] Underflow prevented with checked arithmetic");
       }
     });
 
@@ -179,7 +179,7 @@ describe("Secure: Missing Account Validation Fixed", () => {
       // First, let's just verify the check exists
       // (Setting up u64::MAX points would be impractical in test)
       
-      console.log("✅ Overflow protection via checked_add confirmed in code");
+      console.log("[PASS] Overflow protection via checked_add confirmed in code");
     });
   });
 
@@ -199,7 +199,7 @@ describe("Secure: Missing Account Validation Fixed", () => {
       const vaultData = await program.account.vault.fetch(user1Vault);
       expect(vaultData.authority.toString()).to.equal(user1.publicKey.toString());
       
-      console.log("✅ Vault initialized with PDA");
+      console.log("[PASS] Vault initialized with PDA");
     });
 
     it("Should reject fake vault accounts", async () => {
@@ -210,7 +210,7 @@ describe("Secure: Missing Account Validation Fixed", () => {
         await program.methods
           .withdraw(new anchor.BN(100))
           .accounts({
-            vault: fakeVault.publicKey, // ❌ Not the correct PDA
+            vault: fakeVault.publicKey, // [VULNERABLE] Not the correct PDA
             authority: user1.publicKey,
             systemProgram: SystemProgram.programId,
           })
@@ -220,7 +220,7 @@ describe("Secure: Missing Account Validation Fixed", () => {
         throw new Error("Should have failed but didn't!");
       } catch (err) {
         expect(err.message).to.include("AccountNotInitialized").or.include("seeds");
-        console.log("✅ Fake vault rejected");
+        console.log("[PASS] Fake vault rejected");
       }
     });
 
@@ -231,7 +231,7 @@ describe("Secure: Missing Account Validation Fixed", () => {
           .withdraw(new anchor.BN(50))
           .accounts({
             vault: user1Vault,
-            authority: user2.publicKey, // ❌ Wrong authority
+            authority: user2.publicKey, // [VULNERABLE] Wrong authority
             systemProgram: SystemProgram.programId,
           })
           .signers([user2])
@@ -240,7 +240,7 @@ describe("Secure: Missing Account Validation Fixed", () => {
         throw new Error("Should have failed but didn't!");
       } catch (err) {
         // Will fail on either has_one constraint or PDA derivation
-        console.log("✅ Authority bypass prevented");
+        console.log("[PASS] Authority bypass prevented");
       }
     });
 
@@ -250,7 +250,7 @@ describe("Secure: Missing Account Validation Fixed", () => {
       
       // For this test, we'd need to add funds to vault first
       // Skipping actual transfer for test simplicity
-      console.log("✅ Legitimate withdrawal would succeed with proper authority");
+      console.log("[PASS] Legitimate withdrawal would succeed with proper authority");
     });
   });
 
@@ -266,7 +266,7 @@ describe("Secure: Missing Account Validation Fixed", () => {
         newAccountPubkey: systemAccount.publicKey,
         lamports: await provider.connection.getMinimumBalanceForRentExemption(100),
         space: 100,
-        programId: SystemProgram.programId, // ❌ Wrong owner
+        programId: SystemProgram.programId, // [VULNERABLE] Wrong owner
       });
 
       await provider.sendAndConfirm(
@@ -279,7 +279,7 @@ describe("Secure: Missing Account Validation Fixed", () => {
         await program.methods
           .transferPoints(new anchor.BN(10))
           .accounts({
-            from: systemAccount.publicKey, // ❌ Owned by System Program
+            from: systemAccount.publicKey, // [VULNERABLE] Owned by System Program
             to: user2Account,
             authority: user1.publicKey,
           })
@@ -289,7 +289,7 @@ describe("Secure: Missing Account Validation Fixed", () => {
         throw new Error("Should have failed but didn't!");
       } catch (err) {
         expect(err.message).to.include("AccountOwnedByWrongProgram").or.include("AccountNotInitialized");
-        console.log("✅ Wrong owner rejected by Account<> type");
+        console.log("[PASS] Wrong owner rejected by Account<> type");
       }
     });
   });
@@ -299,11 +299,11 @@ describe("Secure: Missing Account Validation Fixed", () => {
       console.log("\n========================================");
       console.log("SECURITY FEATURES SUMMARY");
       console.log("========================================");
-      console.log("✅ Feature 1: PDA Enforcement (seeds + bump)");
-      console.log("✅ Feature 2: Authority Validation (has_one + Signer)");
-      console.log("✅ Feature 3: Checked Arithmetic");
-      console.log("✅ Feature 4: Vault PDA Security");
-      console.log("✅ Feature 5: Owner Verification");
+      console.log("[PASS] Feature 1: PDA Enforcement (seeds + bump)");
+      console.log("[PASS] Feature 2: Authority Validation (has_one + Signer)");
+      console.log("[PASS] Feature 3: Checked Arithmetic");
+      console.log("[PASS] Feature 4: Vault PDA Security");
+      console.log("[PASS] Feature 5: Owner Verification");
       console.log("========================================");
       console.log("\nAll security features active!");
       console.log("Program successfully prevents all exploits.");
@@ -316,17 +316,17 @@ describe("Secure: Missing Account Validation Fixed", () => {
       console.log("SECURITY COMPARISON");
       console.log("========================================");
       console.log("\nVULNERABLE VERSION:");
-      console.log("  ❌ No PDA verification");
-      console.log("  ❌ No owner checks");
-      console.log("  ❌ Authority from parameters");
-      console.log("  ❌ No signer requirement");
-      console.log("  ❌ Unchecked arithmetic");
+      console.log("  [VULNERABLE] No PDA verification");
+      console.log("  [VULNERABLE] No owner checks");
+      console.log("  [VULNERABLE] Authority from parameters");
+      console.log("  [VULNERABLE] No signer requirement");
+      console.log("  [VULNERABLE] Unchecked arithmetic");
       console.log("\nSECURE VERSION:");
-      console.log("  ✅ PDA with seeds + bump");
-      console.log("  ✅ Account<> type owner check");
-      console.log("  ✅ has_one authority validation");
-      console.log("  ✅ Signer<> type enforcement");
-      console.log("  ✅ Checked arithmetic");
+      console.log("  [PASS] PDA with seeds + bump");
+      console.log("  [PASS] Account<> type owner check");
+      console.log("  [PASS] has_one authority validation");
+      console.log("  [PASS] Signer<> type enforcement");
+      console.log("  [PASS] Checked arithmetic");
       console.log("========================================");
     });
   });

@@ -1,8 +1,8 @@
-# 🚀 2-DAY COMPLETION GUIDE - SOLANA SECURITY PATTERNS
+﻿# 🚀 2-DAY COMPLETION GUIDE - SOLANA SECURITY PATTERNS
 
 ## Current Status (Day 1 - Morning)
 
-### ✅ 100% Complete
+### [SECURE] 100% Complete
 - [x] All research & documentation (15,000 words)
 - [x] Example 01: Complete with tests
 - [x] CI/CD infrastructure
@@ -52,7 +52,7 @@ declare_id!("[FROM_Anchor.toml]");
 pub mod [example_name]_vulnerable {
     use super::*;
     
-    // ❌ VULNERABLE INSTRUCTION
+    // [VULNERABLE] VULNERABLE INSTRUCTION
     // Clear comment explaining the vulnerability
     pub fn vulnerable_instruction(...) -> Result<()> {
         // Code with security flaw
@@ -62,7 +62,7 @@ pub mod [example_name]_vulnerable {
 
 #[derive(Accounts)]
 pub struct VulnerableAccounts<'info> {
-    // ❌ Missing security constraints
+    // [VULNERABLE] Missing security constraints
 }
 
 // Account structures
@@ -81,7 +81,7 @@ pub struct VulnerableAccounts<'info> {
 ```rust
 pub fn transfer(
     ctx: Context<Transfer>, 
-    authority: Pubkey  // ❌ Accepts pubkey as parameter
+    authority: Pubkey  // [VULNERABLE] Accepts pubkey as parameter
 ) -> Result<()> {
     require!(ctx.accounts.vault.owner == authority, ...);
     // Transfer logic
@@ -91,14 +91,14 @@ pub fn transfer(
 pub struct Transfer<'info> {
     #[account(mut)]
     pub vault: Account<'info, Vault>,
-    pub authority: AccountInfo<'info>,  // ❌ Not Signer!
+    pub authority: AccountInfo<'info>,  // [VULNERABLE] Not Signer!
 }
 ```
 
 **Secure Code Pattern:**
 ```rust
 pub fn transfer(ctx: Context<Transfer>) -> Result<()> {
-    // ✅ No authority parameter - use verified signer
+    // [SECURE] No authority parameter - use verified signer
     // Transfer logic
 }
 
@@ -106,10 +106,10 @@ pub fn transfer(ctx: Context<Transfer>) -> Result<()> {
 pub struct Transfer<'info> {
     #[account(
         mut,
-        has_one = authority  // ✅ Validates relationship
+        has_one = authority  // [SECURE] Validates relationship
     )]
     pub vault: Account<'info, Vault>,
-    pub authority: Signer<'info>,  // ✅ Must sign!
+    pub authority: Signer<'info>,  // [SECURE] Must sign!
 }
 ```
 
@@ -133,7 +133,7 @@ pub struct Vault {
 **Vulnerable Code Pattern:**
 ```rust
 pub fn deposit(ctx: Context<Deposit>, amount: u64) -> Result<()> {
-    ctx.accounts.vault.balance += amount;  // ❌ Can overflow
+    ctx.accounts.vault.balance += amount;  // [VULNERABLE] Can overflow
     Ok(())
 }
 ```
@@ -142,7 +142,7 @@ pub fn deposit(ctx: Context<Deposit>, amount: u64) -> Result<()> {
 ```rust
 pub fn deposit(ctx: Context<Deposit>, amount: u64) -> Result<()> {
     ctx.accounts.vault.balance = ctx.accounts.vault.balance
-        .checked_add(amount)  // ✅ Checked arithmetic
+        .checked_add(amount)  // [SECURE] Checked arithmetic
         .ok_or(ErrorCode::Overflow)?;
     Ok(())
 }
@@ -168,10 +168,10 @@ pub fn flash_loan(ctx: Context<FlashLoan>, amount: u64) -> Result<()> {
     // Transfer tokens
     token::transfer(...)?;
     
-    // ❌ Call external program without protection
+    // [VULNERABLE] Call external program without protection
     invoke(&callback_ix, &accounts)?;
     
-    // ❌ Assume state unchanged
+    // [VULNERABLE] Assume state unchanged
     require!(vault.balance >= initial, ...);
     Ok(())
 }
@@ -182,17 +182,17 @@ pub fn flash_loan(ctx: Context<FlashLoan>, amount: u64) -> Result<()> {
 pub fn flash_loan(ctx: Context<FlashLoan>, amount: u64) -> Result<()> {
     let initial = ctx.accounts.vault.balance;
     
-    // ✅ Set reentrancy guard
+    // [SECURE] Set reentrancy guard
     require!(!ctx.accounts.vault.locked, ErrorCode::Reentrant);
     ctx.accounts.vault.locked = true;
     
     token::transfer(...)?;
     invoke(&callback_ix, &accounts)?;
     
-    // ✅ Reload account after CPI
+    // [SECURE] Reload account after CPI
     ctx.accounts.vault.reload()?;
     
-    // ✅ Verify invariants
+    // [SECURE] Verify invariants
     require!(ctx.accounts.vault.balance >= initial + fee, ...);
     
     ctx.accounts.vault.locked = false;
@@ -217,7 +217,7 @@ pub fn flash_loan(ctx: Context<FlashLoan>, amount: u64) -> Result<()> {
 **Vulnerable Code Pattern:**
 ```rust
 pub fn close_account(ctx: Context<Close>) -> Result<()> {
-    // ❌ No validation of closer or destination
+    // [VULNERABLE] No validation of closer or destination
     let lamports = ctx.accounts.account.to_account_info().lamports();
     **ctx.accounts.destination.add_lamports(lamports)?;
     **ctx.accounts.account.to_account_info().sub_lamports(lamports)?;
@@ -229,7 +229,7 @@ pub struct Close<'info> {
     #[account(mut)]
     pub account: Account<'info, UserAccount>,
     #[account(mut)]
-    pub destination: AccountInfo<'info>,  // ❌ Attacker controlled
+    pub destination: AccountInfo<'info>,  // [VULNERABLE] Attacker controlled
 }
 ```
 
@@ -239,7 +239,7 @@ pub struct Close<'info> {
 pub struct Close<'info> {
     #[account(
         mut,
-        close = authority,  // ✅ Anchor handles everything
+        close = authority,  // [SECURE] Anchor handles everything
         has_one = authority
     )]
     pub account: Account<'info, UserAccount>,
@@ -262,7 +262,7 @@ pub struct Close<'info> {
 pub struct Initialize<'info> {
     #[account(
         init,
-        seeds = [seed.as_bytes()],  // ❌ User controls seed!
+        seeds = [seed.as_bytes()],  // [VULNERABLE] User controls seed!
         bump
     )]
     pub account: Account<'info, MyAccount>,
@@ -276,8 +276,8 @@ pub struct Initialize<'info> {
     #[account(
         init,
         seeds = [
-            b"account",  // ✅ Fixed prefix
-            authority.key().as_ref(),  // ✅ Unique ID
+            b"account",  // [SECURE] Fixed prefix
+            authority.key().as_ref(),  // [SECURE] Unique ID
         ],
         bump
     )]
@@ -303,7 +303,7 @@ pub struct Initialize<'info> {
 **Vulnerable Code Pattern:**
 ```rust
 pub fn calculate_share_value(total: u64, shares: u64) -> u64 {
-    total / shares  // ❌ Loses precision
+    total / shares  // [VULNERABLE] Loses precision
 }
 ```
 
@@ -318,7 +318,7 @@ pub fn calculate_share_value(total: u64, shares: u64) -> Result<u64> {
     let result = total_dec
         .checked_div(shares_dec)
         .ok_or(ErrorCode::DivisionError)?
-        .floor();  // ✅ Explicit rounding strategy
+        .floor();  // [SECURE] Explicit rounding strategy
     
     Ok(result.to_u64().ok_or(ErrorCode::Overflow)?)
 }
@@ -338,7 +338,7 @@ pub fn calculate_share_value(total: u64, shares: u64) -> Result<u64> {
 
 ### Day 1 Schedule
 
-**Morning (4 hours) - DONE ✅**
+**Morning (4 hours) - DONE [SECURE]**
 - Research & documentation
 - Example 01 complete
 - Infrastructure
@@ -390,7 +390,7 @@ anchor-lang = "0.32.1"
 ### Vulnerable lib.rs (30-45 min each)
 - [ ] declare_id! with ID from Anchor.toml
 - [ ] 2-3 vulnerable instructions
-- [ ] Clear ❌ markers
+- [ ] Clear [VULNERABLE] markers
 - [ ] Inline exploitation notes
 - [ ] Account structures
 - [ ] Error codes
@@ -398,7 +398,7 @@ anchor-lang = "0.32.1"
 ### Secure lib.rs (30-45 min each)
 - [ ] declare_id! with secure ID
 - [ ] Same instructions, secure implementation
-- [ ] Clear ✅ markers
+- [ ] Clear [SECURE] markers
 - [ ] Inline security explanations
 - [ ] Proper Anchor constraints
 - [ ] Checked arithmetic
@@ -481,7 +481,7 @@ If time gets tight, prioritize:
 ### Must Have (Core Bounty Requirements)
 - [x] 5+ examples (we have structure for 7!)
 - [ ] Examples 01-05 fully implemented
-- [x] Deep-dive content (✅ have 5000 words!)
+- [x] Deep-dive content ([SECURE] have 5000 words!)
 - [x] Research & citations
 - [ ] Working tests for 01-05
 
@@ -515,7 +515,7 @@ If time gets tight, prioritize:
 
 ---
 
-## ✅ COMPLETION TRACKING
+## [SECURE] COMPLETION TRACKING
 
 ### Example 01: Missing Account Validation
 - [x] Vulnerable implementation

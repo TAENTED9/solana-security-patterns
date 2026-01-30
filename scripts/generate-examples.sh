@@ -1,4 +1,4 @@
-#!/bin/bash
+﻿#!/bin/bash
 
 # Solana Security Patterns - Bulk Example Generator
 # This script creates the directory structure for examples 02-07
@@ -91,9 +91,9 @@ EOF
 }
 EOF
 
-  echo "  ✅ Created structure for $num-$name"
+  echo "  [PASS] Created structure for $num-$name"
 done
 
 echo ""
-echo "✅ All example structures created!"
+echo "[PASS] All example structures created!"
 echo "📁 Examples 02-07 are ready for implementation"

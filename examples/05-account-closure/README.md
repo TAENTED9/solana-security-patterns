@@ -1,4 +1,4 @@
-# Example 05: Account Closure and Lamport Drain Vulnerabilities
+﻿# Example 05: Account Closure and Lamport Drain Vulnerabilities
 
 ## Overview
 
@@ -38,11 +38,11 @@ Solana accounts can be closed by transferring all lamports to another account an
 **Key Issues:**
 
 ```rust
-// ❌ PROBLEM 1: No authority check for closure
+// [VULNERABLE] PROBLEM 1: No authority check for closure
 pub fn close_vault(ctx: Context<CloseVault>) -> Result<()> {
     let vault = &ctx.accounts.vault;
     
-    // ❌ ANYONE can close this vault!
+    // [VULNERABLE] ANYONE can close this vault!
     // Transfer all lamports to recipient
     let rent_exempt_balance = Rent::get()?.minimum_balance(vault.to_account_info().data_len());
     let remaining = vault.to_account_info().lamports() - rent_exempt_balance;
@@ -53,9 +53,9 @@ pub fn close_vault(ctx: Context<CloseVault>) -> Result<()> {
     Ok(())
 }
 
-// ❌ PROBLEM 2: Recipient from instruction data
+// [VULNERABLE] PROBLEM 2: Recipient from instruction data
 pub fn close_with_recipient(ctx: Context<CloseVault>, recipient: Pubkey) -> Result<()> {
-    // ❌ Attacker controls where lamports go
+    // [VULNERABLE] Attacker controls where lamports go
     let vault = &ctx.accounts.vault;
     let lamports = vault.to_account_info().lamports();
     
@@ -64,11 +64,11 @@ pub fn close_with_recipient(ctx: Context<CloseVault>, recipient: Pubkey) -> Resu
     // How would we add lamports to arbitrary recipient?
 }
 
-// ❌ PROBLEM 3: Missing owner verification
+// [VULNERABLE] PROBLEM 3: Missing owner verification
 pub fn close_account(ctx: Context<Close>) -> Result<()> {
     let account = &ctx.accounts.account;
     
-    // ❌ No check that account is actually owned by this program
+    // [VULNERABLE] No check that account is actually owned by this program
     // Could be a regular account not under program control
     let lamports = account.to_account_info().lamports();
     
@@ -79,13 +79,13 @@ pub fn close_account(ctx: Context<Close>) -> Result<()> {
     Ok(())
 }
 
-// ❌ PROBLEM 4: Close authority not verified
+// [VULNERABLE] PROBLEM 4: Close authority not verified
 #[derive(Accounts)]
 pub struct CloseAccount<'info> {
     #[account(mut)]
     pub account: Account<'info, MyAccount>,
     
-    pub close_authority: AccountInfo<'info>,  // ❌ Not a Signer!
+    pub close_authority: AccountInfo<'info>,  // [VULNERABLE] Not a Signer!
     #[account(mut)]
     pub destination: AccountInfo<'info>,
 }
@@ -102,13 +102,13 @@ pub struct CloseAccount<'info> {
 - Marks account as closed to prevent re-initialization
 
 ```rust
-// ✅ Proper account closure with authority check
+// [SECURE] Proper account closure with authority check
 #[derive(Accounts)]
 pub struct CloseVault<'info> {
     #[account(mut, has_one = authority)]
     pub vault: Account<'info, Vault>,
     
-    // ✅ Authority MUST be signer
+    // [SECURE] Authority MUST be signer
     pub authority: Signer<'info>,
     
     #[account(mut)]
@@ -118,7 +118,7 @@ pub struct CloseVault<'info> {
 pub fn close_vault(ctx: Context<CloseVault>) -> Result<()> {
     let vault = &ctx.accounts.vault;
     
-    // ✅ Only authority can close (verified by has_one constraint)
+    // [SECURE] Only authority can close (verified by has_one constraint)
     // Transfer ALL lamports to authorized recipient
     let lamports = vault.to_account_info().lamports();
     
@@ -129,13 +129,13 @@ pub fn close_vault(ctx: Context<CloseVault>) -> Result<()> {
     Ok(())
 }
 
-// ✅ Safe close with explicit recipient validation
+// [SECURE] Safe close with explicit recipient validation
 #[derive(Accounts)]
 pub struct SafeClose<'info> {
     #[account(
         mut,
         has_one = authority,
-        close = recipient  // ✅ Account closes to recipient, funds transfer automatically
+        close = recipient  // [SECURE] Account closes to recipient, funds transfer automatically
     )]
     pub account: Account<'info, MyAccount>,
     
@@ -146,21 +146,21 @@ pub struct SafeClose<'info> {
 }
 
 pub fn safe_close_account(ctx: Context<SafeClose>) -> Result<()> {
-    // ✅ Anchor's `close` attribute handles lamport transfer and data clearing
+    // [SECURE] Anchor's `close` attribute handles lamport transfer and data clearing
     // No manual lamport manipulation needed
     msg!("Account safely closed by authority");
     Ok(())
 }
 
-// ✅ Validate recipient is safe account
+// [SECURE] Validate recipient is safe account
 pub fn close_with_validation(ctx: Context<CloseVault>) -> Result<()> {
     let vault = &ctx.accounts.vault;
     let recipient = &ctx.accounts.recipient;
     
-    // ✅ Ensure recipient is system program account (can receive lamports)
+    // [SECURE] Ensure recipient is system program account (can receive lamports)
     require!(recipient.is_writable, ErrorCode::RecipientMustBeWritable);
     
-    // ✅ Ensure we're actually closing our own account
+    // [SECURE] Ensure we're actually closing our own account
     require!(
         vault.to_account_info().owner == &crate::ID,
         ErrorCode::AccountNotOwnedByProgram

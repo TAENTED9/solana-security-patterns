@@ -1,4 +1,4 @@
-# Example 07: Arithmetic Precision Loss in DeFi
+﻿# Example 07: Arithmetic Precision Loss in DeFi
 
 ## Overview
 
@@ -38,44 +38,44 @@ Solana uses integer-only arithmetic (no floating point). DeFi protocols must imp
 **Key Issues:**
 
 ```rust
-// ❌ PROBLEM 1: Divide before multiply loses precision
+// [VULNERABLE] PROBLEM 1: Divide before multiply loses precision
 pub fn calculate_swap_output(input: u64, rate: u64, decimals: u8) -> u64 {
-    // ❌ WRONG ORDER: (input / SCALE) * rate loses fractional amount
+    // [VULNERABLE] WRONG ORDER: (input / SCALE) * rate loses fractional amount
     let scaled_input = input / (10_u64.pow(decimals as u32));
     scaled_input.saturating_mul(rate)
 }
 
 // Better but still wrong:
 pub fn better_but_wrong(input: u64, rate: u64, decimals: u8) -> u64 {
-    // ❌ Still loses precision: multiply then divide
+    // [VULNERABLE] Still loses precision: multiply then divide
     (input * rate) / (10_u64.pow(decimals as u32))
 }
 
-// ❌ PROBLEM 2: Ignoring decimal places
+// [VULNERABLE] PROBLEM 2: Ignoring decimal places
 pub fn swap_tokens_wrong(amount: u64, price: u64) -> u64 {
-    // ❌ Assumes same decimal places - wrong for USDC/SOL pair
+    // [VULNERABLE] Assumes same decimal places - wrong for USDC/SOL pair
     amount * price  // USDC has 6 decimals, SOL has 9!
 }
 
-// ❌ PROBLEM 3: Accumulation errors compound
+// [VULNERABLE] PROBLEM 3: Accumulation errors compound
 pub fn calculate_accumulated_yield(principal: u64, rate_per_period: u64, periods: u64) -> u64 {
     let mut total = principal;
     for _ in 0..periods {
         let yield_amount = (total * rate_per_period) / 10_000;
-        total += yield_amount;  // ❌ Rounding error accumulates
+        total += yield_amount;  // [VULNERABLE] Rounding error accumulates
     }
     total
 }
 
-// ❌ PROBLEM 4: No overflow protection in multiplication
+// [VULNERABLE] PROBLEM 4: No overflow protection in multiplication
 pub fn multiply_with_decimals(a: u64, b: u64, decimals: u8) -> u64 {
-    let result = a * b;  // ❌ Could overflow before dividing!
+    let result = a * b;  // [VULNERABLE] Could overflow before dividing!
     result / (10_u64.pow(decimals as u32))
 }
 
-// ❌ PROBLEM 5: Incorrect precision in oracle prices
+// [VULNERABLE] PROBLEM 5: Incorrect precision in oracle prices
 pub fn price_from_oracle(base_price: u64, multiplier: u64) -> u64 {
-    // ❌ No consideration for oracle decimal places
+    // [VULNERABLE] No consideration for oracle decimal places
     (base_price * multiplier) / 1000  // Assumes fixed decimals
 }
 ```
@@ -91,7 +91,7 @@ pub fn price_from_oracle(base_price: u64, multiplier: u64) -> u64 {
 - Documents all precision assumptions
 
 ```rust
-// ✅ CORRECT: Multiply before divide
+// [SECURE] CORRECT: Multiply before divide
 pub fn calculate_swap_output(
     input: u64,
     rate: u64,
@@ -123,7 +123,7 @@ pub fn calculate_swap_output(
     Ok(output)
 }
 
-// ✅ Proper fixed-point arithmetic for different decimals
+// [SECURE] Proper fixed-point arithmetic for different decimals
 pub fn cross_decimal_swap(
     token_a_amount: u64,
     price_a_to_b: u64,
@@ -154,7 +154,7 @@ pub fn cross_decimal_swap(
     Ok(token_b_amount)
 }
 
-// ✅ Helper: Scale amount up to normalized decimals
+// [SECURE] Helper: Scale amount up to normalized decimals
 pub fn scale_amount(amount: u64, from_decimals: u8, to_decimals: u8) -> Result<u64> {
     if to_decimals >= from_decimals {
         amount
@@ -165,7 +165,7 @@ pub fn scale_amount(amount: u64, from_decimals: u8, to_decimals: u8) -> Result<u
     }
 }
 
-// ✅ Helper: Scale amount down from normalized decimals
+// [SECURE] Helper: Scale amount down from normalized decimals
 pub fn descale_amount(amount: u64, from_decimals: u8, to_decimals: u8) -> Result<u64> {
     if to_decimals <= from_decimals {
         Ok(amount / 10_u64.pow((from_decimals - to_decimals) as u32))
@@ -176,7 +176,7 @@ pub fn descale_amount(amount: u64, from_decimals: u8, to_decimals: u8) -> Result
     }
 }
 
-// ✅ Secure yield calculation with rounding in protocol's favor
+// [SECURE] Secure yield calculation with rounding in protocol's favor
 pub fn calculate_yield_secure(
     principal: u64,
     rate_per_period: u64,  // In basis points (100 = 1%)
@@ -205,7 +205,7 @@ pub fn calculate_yield_secure(
     }
 }
 
-// ✅ Price feed with proper decimal handling
+// [SECURE] Price feed with proper decimal handling
 pub fn get_token_price(
     base_price: u64,
     base_decimals: u8,
@@ -224,7 +224,7 @@ pub fn get_token_price(
     Ok(product / (10_u64.pow(18)))
 }
 
-// ✅ Slippage protection with proper precision
+// [SECURE] Slippage protection with proper precision
 pub fn verify_min_output(
     actual_output: u64,
     expected_output: u64,

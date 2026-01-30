@@ -1,4 +1,4 @@
-use anchor_lang::prelude::*;
+﻿use anchor_lang::prelude::*;
 
 declare_id!("Secur3Va1id222222222222222222222222222222");
 
@@ -15,9 +15,9 @@ pub mod missing_validation_secure {
     pub fn initialize(ctx: Context<Initialize>, name: String) -> Result<()> {
         let user_account = &mut ctx.accounts.user_account;
         
-        // ✅ Account is properly initialized as PDA
-        // ✅ Owner is implicitly verified by Account<> type
-        // ✅ PDA seeds and bump are verified by Anchor
+        // [SECURE] Account is properly initialized as PDA
+        // [SECURE] Owner is implicitly verified by Account<> type
+        // [SECURE] PDA seeds and bump are verified by Anchor
         user_account.authority = ctx.accounts.authority.key();
         user_account.name = name;
         user_account.points = 0;
@@ -42,12 +42,12 @@ pub mod missing_validation_secure {
         let from = &mut ctx.accounts.from;
         let to = &mut ctx.accounts.to;
 
-        // ✅ Both accounts are verified PDAs (seeds/bump checked)
-        // ✅ Account ownership verified (must be owned by this program)
-        // ✅ Authority verified via has_one constraint
-        // ✅ Authority must have signed (Signer<> type)
+        // [SECURE] Both accounts are verified PDAs (seeds/bump checked)
+        // [SECURE] Account ownership verified (must be owned by this program)
+        // [SECURE] Authority verified via has_one constraint
+        // [SECURE] Authority must have signed (Signer<> type)
         
-        // ✅ SECURE: Checked arithmetic with explicit error
+        // [SECURE] SECURE: Checked arithmetic with explicit error
         from.points = from.points
             .checked_sub(amount)
             .ok_or(ErrorCode::InsufficientPoints)?;
@@ -72,14 +72,14 @@ pub mod missing_validation_secure {
         ctx: Context<Withdraw>,
         amount: u64,
     ) -> Result<()> {
-        // ✅ SECURE: No vault_authority parameter accepted
-        // ✅ SECURE: Authority verified as signer
-        // ✅ SECURE: has_one ensures vault.authority == authority.key()
-        // ✅ SECURE: PDA verified with seeds and bump
+        // [SECURE] SECURE: No vault_authority parameter accepted
+        // [SECURE] SECURE: Authority verified as signer
+        // [SECURE] SECURE: has_one ensures vault.authority == authority.key()
+        // [SECURE] SECURE: PDA verified with seeds and bump
         
         let vault = &mut ctx.accounts.vault;
         
-        // ✅ SECURE: Checked arithmetic
+        // [SECURE] SECURE: Checked arithmetic
         vault.balance = vault.balance
             .checked_sub(amount)
             .ok_or(ErrorCode::InsufficientBalance)?;
@@ -107,9 +107,9 @@ pub mod missing_validation_secure {
 
 #[derive(Accounts)]
 pub struct Initialize<'info> {
-    /// ✅ SECURE: PDA with seeds ensures deterministic address
-    /// ✅ SECURE: Only this program can create this PDA
-    /// ✅ SECURE: Account ownership verified implicitly
+    /// [SECURE] SECURE: PDA with seeds ensures deterministic address
+    /// [SECURE] SECURE: Only this program can create this PDA
+    /// [SECURE] SECURE: Account ownership verified implicitly
     #[account(
         init,
         payer = authority,
@@ -120,16 +120,16 @@ pub struct Initialize<'info> {
     pub user_account: Account<'info, UserAccount>,
     
     #[account(mut)]
-    pub authority: Signer<'info>,  // ✅ Must sign
+    pub authority: Signer<'info>,  // [SECURE] Must sign
     
     pub system_program: Program<'info, System>,
 }
 
 #[derive(Accounts)]
 pub struct TransferPoints<'info> {
-    /// ✅ SECURE: PDA verification with seeds and stored bump
-    /// ✅ SECURE: has_one verifies authority relationship
-    /// ✅ SECURE: Owner check via Account<> type
+    /// [SECURE] SECURE: PDA verification with seeds and stored bump
+    /// [SECURE] SECURE: has_one verifies authority relationship
+    /// [SECURE] SECURE: Owner check via Account<> type
     #[account(
         mut,
         seeds = [b"user", authority.key().as_ref()],
@@ -138,7 +138,7 @@ pub struct TransferPoints<'info> {
     )]
     pub from: Account<'info, UserAccount>,
     
-    /// ✅ SECURE: Recipient account also verified as valid PDA
+    /// [SECURE] SECURE: Recipient account also verified as valid PDA
     #[account(
         mut,
         seeds = [b"user", to.authority.as_ref()],
@@ -146,24 +146,24 @@ pub struct TransferPoints<'info> {
     )]
     pub to: Account<'info, UserAccount>,
     
-    /// ✅ SECURE: Must be signer
+    /// [SECURE] SECURE: Must be signer
     pub authority: Signer<'info>,
 }
 
 #[derive(Accounts)]
 pub struct Withdraw<'info> {
-    /// ✅ SECURE: PDA with seeds and bump verification
-    /// ✅ SECURE: has_one links vault.authority to signer
-    /// ✅ SECURE: Owner checked via Account<> type
+    /// [SECURE] SECURE: PDA with seeds and bump verification
+    /// [SECURE] SECURE: has_one links vault.authority to signer
+    /// [SECURE] SECURE: Owner checked via Account<> type
     #[account(
         mut,
         seeds = [b"vault", authority.key().as_ref()],
         bump = vault.bump,
-        has_one = authority,  // ✅ Ensures vault.authority == authority.key()
+        has_one = authority,  // [SECURE] Ensures vault.authority == authority.key()
     )]
     pub vault: Account<'info, Vault>,
     
-    /// ✅ SECURE: Must sign the transaction
+    /// [SECURE] SECURE: Must sign the transaction
     pub authority: Signer<'info>,
     
     pub system_program: Program<'info, System>,
