@@ -27,17 +27,17 @@ This repository builds a clear, educational security reference for Solana develo
 ```
 solana-security-patterns/
 +-- examples/                              # Security pattern implementations
-�   +-- 01-missing-account-validation/     # Owner and PDA checks
-�   +-- 02-signer-authorization/           # Authority verification
-�   +-- 03-arithmetic-overflow/            # Checked math operations
-�   +-- 04-cpi-security/                   # Cross-program invocation safety
-�   +-- 05-account-closure/                # Safe account closure
-�   +-- 06-pda-seed-collision/             # PDA uniqueness
-�   +-- 07-precision-loss/                 # Decimal precision in DeFi
+   +-- 01-missing-account-validation/     # Owner and PDA checks
+   +-- 02-signer-authorization/           # Authority verification
+   +-- 03-arithmetic-overflow/            # Checked math operations
+   +-- 04-cpi-security/                   # Cross-program invocation safety
+   +-- 05-account-closure/                # Safe account closure
+   +-- 06-pda-seed-collision/             # PDA uniqueness
+   +-- 07-precision-loss/                 # Decimal precision in DeFi
 +-- docs/                                  # Documentation
-�   +-- deep-dive.md                       # Comprehensive security patterns guide
-�   +-- research-summary.md                # Vulnerability research and analysis
-�   +-- references.md                      # Citations and sources
+   +-- deep-dive.md                       # Comprehensive security patterns guide
+   +-- research-summary.md                # Vulnerability research and analysis
+   +-- references.md                      # Citations and sources
 +-- scripts/                               # Build and test automation
 +-- .github/workflows/                     # CI/CD pipeline
 +-- README.md                              # This file
